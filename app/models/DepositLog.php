@@ -27,7 +27,7 @@ class DepositLog extends \yii\db\ActiveRecord implements LogInterface
      */
     public static function tableName()
     {
-        return 'deposit';
+        return 'deposit_log';
     }
 
     /**

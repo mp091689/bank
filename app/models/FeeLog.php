@@ -27,7 +27,7 @@ class FeeLog extends \yii\db\ActiveRecord implements LogInterface
      */
     public static function tableName()
     {
-        return 'fee';
+        return 'fee_log';
     }
 
     /**

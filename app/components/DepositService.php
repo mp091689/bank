@@ -82,12 +82,15 @@ class DepositService extends Component implements DepositServiceInterface
             $chargeAt = (new \DateTime())->setTimestamp($account->charge_at);
         }
 
-        $chargeAt->modify('+1 month');
+        $chargeAt->modify('first day of +1 month');
 
-        while ($chargeAt->format('d') < $createdAt->format('d') && $chargeAt->format('d') < 5) {
-            $chargeAt->modify('-1 day');
+        if ($chargeAt->format('t') > $createdAt->format('j')) {
+            while ($chargeAt->format('j') < $createdAt->format('j')) {
+                $chargeAt->modify('+1 day');
+            }
+        } else {
+            $chargeAt->modify('last day of this month');
         }
-
         $account->charge_at = $chargeAt->getTimestamp();
     }
 }
