@@ -49,11 +49,12 @@ class FeeService extends Component implements FeeServiceInterface
         if (!$account->save()) {
             throw new \Exception('Oops some thing went wrong!');
         }
+        $fee = $this->getFeeByDate($this->getFee((int)$account->balance), $account->created_at);
         $this->logService->log(
             new FeeLog(),
             $account->id,
             $oldBalance,
-            $account->balance,
+            (int)$account->balance - $fee,
             $oldBalance - $account->balance,
             $percent
         );
@@ -80,32 +81,52 @@ class FeeService extends Component implements FeeServiceInterface
     }
 
     /**
-     * Calculates balance with fee.
+     * Calculate fee depends on created date of account.
+     *
+     * @param int $fee
+     * @param int $createdAt
+     *
+     * @return int
+     * @throws \Exception
+     */
+    private function getFeeByDate(int $fee, int $createdAt): int
+    {
+        $now = new \DateTime();
+        $diff = $now->diff(new \DateTime($createdAt));
+        if ($diff->m > 0) {
+            return $fee;
+        }
+
+        return $fee * ($diff->d / $now->modify('-1 moth')->format('t'));
+    }
+
+    /**
+     * Calculates fee.
      *
      * @param int $balance
      *
      * @return int
      * @throws \Exception
      */
-    private function getBalance(int $balance): int
+    private function getFee(int $balance): int
     {
         switch ($balance) {
             case $balance < 1000 * 100:
-                $fee = $balance * self::PERCENT_MIN / 100;
+                $fee = (int)($balance * self::PERCENT_MIN / 100);
                 if ($fee < self::FEE_MIN) {
-                    return (int)($balance - self::FEE_MIN);
+                    return self::FEE_MIN;
                 }
 
-                return $balance - $fee;
+                return $fee;
             case $balance >= 1000 * 100 && $balance < 10000 * 100:
                 return (int)($balance * self::PERCENT_MID / 100);
             case $balance >= 10000 * 100:
                 $fee = (int)($balance * self::PERCENT_MAX / 100);
                 if ($fee > self::FEE_MAX) {
-                    return (int)($balance - self::FEE_MAX);
+                    return self::FEE_MAX;
                 }
 
-                return (int)($balance - $fee);
+                return $fee;
 
             default:
                 throw new \Exception('Oops, something went wrong');
